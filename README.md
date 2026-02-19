@@ -69,8 +69,6 @@ g++ -std=c++17 -Iinclude src\*.cpp -O2 -o 8puzzle.exe
 .\8puzzle.exe
 ```
 
-> **Note:** `-O2` uses a capital **O**, not zero.
-
 If PowerShell doesn't expand `src\*.cpp`, use:
 
 ```powershell
@@ -99,8 +97,6 @@ For each of the 10 instances, the program runs A\* with all three heuristics and
 | `Expanded` | Number of states actually expanded             |
 
 A summary table is printed at the end. Two sample solutions (depth ≥ 10) are printed step-by-step.
-
-> **Note:** It's normal for `Popped` to be larger than `Expanded` because the A\* implementation may "lazy skip" outdated priority-queue entries.
 
 ---
 
