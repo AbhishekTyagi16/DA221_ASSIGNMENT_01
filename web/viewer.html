@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>8-Puzzle Solution Viewer</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 80px); gap: 8px; margin: 12px 0; }
+    .cell { width: 80px; height: 80px; display:flex; align-items:center; justify-content:center;
+            border: 2px solid #222; font-size: 28px; user-select:none; }
+    .blank { background: #eee; color: #eee; border-style: dashed; }
+    .row { display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+    input[type="range"] { width: 320px; }
+    .small { color:#444; font-size: 14px; }
+    button { padding: 6px 10px; }
+  </style>
+</head>
+<body>
+  <h2>8-Puzzle Visualizer</h2>
+
+  <div class="row">
+    <button id="btnLoad">Load sol.json</button>
+    <input id="fileInput" type="file" accept=".json" />
+    <span class="small">(Use button if served via localhost; or choose file directly)</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="row">
+    <button id="prev">Prev</button>
+    <button id="play">Play</button>
+    <button id="next">Next</button>
+
+    <span>Step:</span>
+    <input id="slider" type="range" min="0" max="0" value="0"/>
+    <span id="stepLabel">0</span>
+
+    <span>Speed(ms):</span>
+    <input id="speed" type="number" value="300" min="50" step="50" style="width:90px"/>
+  </div>
+
+  <div class="small" id="moveLabel"></div>
+
+<script>
+let data = null;
+let step = 0;
+let timer = null;
+
+const grid = document.getElementById("grid");
+const slider = document.getElementById("slider");
+const stepLabel = document.getElementById("stepLabel");
+const moveLabel = document.getElementById("moveLabel");
+
+function render() {
+  if (!data) return;
+  const state = data.states[step];
+  grid.innerHTML = "";
+  for (let i = 0; i < 9; i++) {
+    const v = state[i];
+    const d = document.createElement("div");
+    d.className = "cell" + (v === 0 ? " blank" : "");
+    d.textContent = (v === 0) ? "_" : String(v);
+    grid.appendChild(d);
+  }
+  slider.value = step;
+  stepLabel.textContent = step;
+  if (step === 0) moveLabel.textContent = "Move: (start)";
+  else moveLabel.textContent = "Move: " + (data.moves[step-1] ?? "");
+}
+function setData(obj) {
+  data = obj;
+  step = 0;
+  slider.max = String(Math.max(0, data.states.length - 1));
+  slider.value = "0";
+  render();
+}
+function stop() {
+  if (timer) { clearInterval(timer); timer = null; }
+  document.getElementById("play").textContent = "Play";
+}
+function play() {
+  if (!data) return;
+  if (timer) { stop(); return; }
+  document.getElementById("play").textContent = "Pause";
+  const speed = () => Math.max(50, Number(document.getElementById("speed").value || 300));
+  timer = setInterval(() => {
+    if (step + 1 >= data.states.length) { stop(); return; }
+    step++;
+    render();
+  }, speed());
+}
+document.getElementById("prev").onclick = () => { stop(); if (data && step > 0) { step--; render(); } };
+document.getElementById("next").onclick = () => { stop(); if (data && data.states && step + 1 < data.states.length) { step++; render(); } };
+document.getElementById("play").onclick = play;
+slider.oninput = () => { stop(); step = Number(slider.value); render(); };
+document.getElementById("btnLoad").onclick = async () => {
+  stop();
+  const resp = await fetch("sol.json");
+  const obj = await resp.json();
+  setData(obj);
+};
+document.getElementById("fileInput").addEventListener("change", async (e) => {
+  stop();
+  const f = e.target.files[0];
+  if (!f) return;
+  const txt = await f.text();
+  setData(JSON.parse(txt));
+});
+</script>
+</body>
+</html>
